@@ -1,4 +1,4 @@
-package ru.firesquare.CHANGEME;
+package ru.firesquare.executein;
 
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
@@ -12,15 +12,19 @@ import redempt.redlib.commandmanager.CommandParser;
 import redempt.redlib.config.ConfigManager;
 import redempt.redlib.dev.ChainCommand;
 import redempt.redlib.dev.StructureTool;
-import ru.firesquare.CHANGEME.commands.ExampleCommand;
-import ru.firesquare.CHANGEME.config.Config;
-import ru.firesquare.CHANGEME.config.Messages;
-import ru.firesquare.CHANGEME.listeners.PlayerJoinListener;
-import ru.firesquare.CHANGEME.sql.Player;
+import redempt.redlib.misc.EventListener;
+import redempt.redlib.region.SpheroidRegion;
+import redempt.redlib.region.events.RegionEnterEvent;
+import ru.firesquare.executein.commands.ExecuteCommand;
+import ru.firesquare.executein.config.Config;
+import ru.firesquare.executein.config.Messages;
+import ru.firesquare.executein.sql.ExecuteRegion;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
-public class ExamplePlugin extends JavaPlugin {
+public class ExecutePlugin extends JavaPlugin {
     @Override
     public void onEnable () {
         // Load config
@@ -31,35 +35,36 @@ public class ExamplePlugin extends JavaPlugin {
         reloadFileConfig();
 
         // Set static instance
-        ExamplePlugin.instance = this;
+        ExecutePlugin.instance = this;
 
         // Load and init SQL
         initSQL();
+
+        // Load regions
+        spheroidRegionsList = new ArrayList<>();
+        reloadEvents();
 
         // Register the commands
         ChainCommand chain = new ChainCommand();
         new CommandParser(this.getResource("command.rdcml"))
                 .parse()
-                .register("example", new ExampleCommand(), StructureTool.enable(), chain);
-        
-        // Register listeners
-        this.getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
+                .register("execute", new ExecuteCommand(), StructureTool.enable(), chain);
 
         // Setup Vault
         setupPermissions();
     }
 
-    private Dao<Player, String> playerDao;
+    private Dao<ExecuteRegion, String> regionDao;
 
     public void initSQL() {
         try {
             ConnectionSource connectionSource = new JdbcConnectionSource(Config.database);
 
             // instantiate the dao's
-            playerDao = DaoManager.createDao(connectionSource, Player.class);
+            regionDao = DaoManager.createDao(connectionSource, ExecuteRegion.class);
 
             // create tables
-            TableUtils.createTableIfNotExists(connectionSource, Player.class);
+            TableUtils.createTableIfNotExists(connectionSource, ExecuteRegion.class);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -82,13 +87,34 @@ public class ExamplePlugin extends JavaPlugin {
         return perms;
     }
 
-    private static ExamplePlugin instance;
+    private static ExecutePlugin instance;
 
-    public static ExamplePlugin getInstance () {
-        return ExamplePlugin.instance;
+    public static ExecutePlugin getInstance () {
+        return ExecutePlugin.instance;
     }
 
-    public Dao<Player, String> getPlayerDao() {
-        return playerDao;
+    public Dao<ExecuteRegion, String> getRegionDao() {
+        return regionDao;
+    }
+
+    private List<SpheroidRegion> spheroidRegionsList;
+
+    public void reloadEvents() {
+        for (SpheroidRegion region : spheroidRegionsList) {
+            region.disableEvents();
+        }
+        spheroidRegionsList = new ArrayList<>();
+
+        try {
+            for (ExecuteRegion executeRegion : getRegionDao().queryForAll()) {
+                SpheroidRegion region = new SpheroidRegion(executeRegion.getLocation(), executeRegion.getRadius());
+                spheroidRegionsList.add(region);
+                region.enableEvents();
+                new EventListener<>(ExecutePlugin.getInstance(), RegionEnterEvent.class,
+                        e -> executeRegion.executeCommands(e.getPlayer()));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

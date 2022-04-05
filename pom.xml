@@ -3,18 +3,18 @@
     
     <!-- Project information -->
     <groupId>ru.firesquare</groupId>
-    <artifactId>{CHANGEME}</artifactId>
+    <artifactId>executein</artifactId>
     <packaging>jar</packaging>
 
     <!-- Plugin Information -->
-    <name>{CHANGEME}</name>
-    <description>{CHANGEME}</description>
+    <name>executein</name>
+    <description>Execute commands in region</description>
     <version>0.0.1</version>
-    <url>https://git.averyan.ru/firesquare/plugins/{CHANGEME}</url>
+    <url>https://git.averyan.ru/firesquare/plugins/execute-in</url>
 
     <properties>
         <author>firesquare</author>
-        <mainClass>ru.firesquare.{CHANGEME}.{CHANGEME}</mainClass>
+        <mainClass>ru.firesquare.executein.ExecutePlugin</mainClass>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 

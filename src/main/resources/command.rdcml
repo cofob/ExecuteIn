@@ -1,3 +1,37 @@
-example {
-    hook example
+executein {
+    permission executein.use
+
+    add string:name {
+        hook add
+    }
+
+    rm string:name {
+        hook rm
+    }
+
+    set string:name {
+        commands string...:commands {
+            postarg
+            hook set_commands
+        }
+
+        op_commands string...:commands {
+            postarg
+            hook set_op_commands
+        }
+
+        coords int:x int:y int:z {
+            postarg
+            hook set_coords
+        }
+
+        radius int:radius {
+            postarg
+            hook set_radius
+        }
+    }
+
+    reload {
+        hook reload
+    }
 }
